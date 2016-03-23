@@ -14,6 +14,10 @@ use Saft\Rdf\NamedNode;
 use Saft\Rdf\NamedNodeImpl;
 use Saft\Store\Store;
 
+use Stash;
+use Stash\Driver\FileSystem;
+use Stash\Pool;
+
 
 /**
  * Encapsulates PropertyHelper related classes, ensures correct usage and helps users that way
@@ -134,6 +138,15 @@ class RequestHandler
         } elseif (false === isset($configuration['name'])) {
             throw new \Exception('Parameter $configuration does not have key "name" set.');
         }
+
+        // Create Driver with default options
+        $driver = new FileSystem(array());
+
+        // Inject the driver into a new Pool object.
+        $pool = new Pool($driver);
+
+        // New Items will get and store their data using the same Driver.
+        $item = $pool->getItem('path/to/data');
 
         switch($configuration['name']) {
             // file storage: stores data in files
