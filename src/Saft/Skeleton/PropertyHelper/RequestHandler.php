@@ -2,6 +2,7 @@
 
 namespace Saft\Skeleton\PropertyHelper;
 
+/*
 use Nette\Caching\Cache;
 use Nette\Caching\Storages\FileStorage;
 use Nette\Caching\Storages\NewMemcachedStorage;
@@ -10,12 +11,14 @@ use Nette\Caching\Storages\MongoDBStorage;
 use Nette\Caching\Storages\RedisStorage;
 use Nette\Caching\Storages\SQLiteStorage;
 use Nette\Caching\Storages\APCStorage;
+*/
 use Saft\Rdf\NamedNode;
 use Saft\Rdf\NamedNodeImpl;
 use Saft\Store\Store;
 
-use Stash;
-use Stash\Driver\FileSystem;
+use Stash\Driver\Apc;
+use Stash\Driver\Redis;
+use Stash\Driver\Memcache;
 use Stash\Pool;
 
 
@@ -139,6 +142,7 @@ class RequestHandler
             throw new \Exception('Parameter $configuration does not have key "name" set.');
         }
 
+        /*
         // Create Driver with default options
         $driver = new FileSystem(array());
 
@@ -147,57 +151,31 @@ class RequestHandler
 
         // New Items will get and store their data using the same Driver.
         $item = $pool->getItem('path/to/data');
+        */
 
         switch($configuration['name']) {
-            // file storage: stores data in files
-            case 'file':
-                $this->storage = new FileStorage($configuration['dir']);
-                break;
-
-            // memcached storage
-            case 'memcached':
-                $this->storage = new NewMemcachedStorage(
-                    $configuration['host'],
-                    $configuration['port']
-                );
-                break;
-
-            // memory storage: lasts as long as the current PHP session is executed.
-            case 'memory':
-                $this->storage = new MemoryStorage();
-                break;
-
-            // mongodb storage
-            case 'mongodb':
-                $this->storage = new MongoDBStorage(
-                    $configuration['host'],
-                    $configuration['port']
-                );
-                break;
-
-            // redis storage
-            case 'redis':
-                $this->storage = new RedisStorage(
-                    $configuration['host'],
-                    $configuration['port']
-                );
-                break;
-
-            // sqlite storage
-            case 'sqlite':
-                $this->storage = new SQLiteStorage($configuration['path']);
-                break;
-
-            // apc/apcu storage
             case 'apc':
-                $this->storage = new APCStorage();
+                $driver = new Apc();
+                break;
+
+            case 'memcached':
+                $driver = new Memcache( 
+                    array('servers' => array($configuration['host'], $configuration['port']))
+                );
+                break;
+
+            case 'redis':
+                // ERROR: Connection closed
+                $driver = new Redis(
+                    array('servers' => array(gethostbyname($configuration['host']), $configuration['port']))
+                );
                 break;
 
             default:
                 throw new \Exception('Unknown name given: '. $configuration['name']);
         }
 
-        $this->cache = new Cache($this->storage);
+        $this->cache = new Pool($driver);
     }
 
     /**

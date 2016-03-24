@@ -7,6 +7,8 @@ use Saft\Rdf\NamedNode;
 use Saft\Rdf\Statement;
 use Saft\Store\Store;
 
+use Stash\Pool;
+
 /**
  *
  */
@@ -49,7 +51,7 @@ abstract class AbstractIndex
      * @param NamedNode $graph
      * @throws \Exception if preferedProperties contains 0 elements.
      */
-    public function __construct(Cache $cache, Store $store, NamedNode $graph)
+    public function __construct(Pool $cache, Store $store, NamedNode $graph)
     {
         $this->cache = $cache;
         $this->graph = $graph;
@@ -118,7 +120,8 @@ abstract class AbstractIndex
                 }
                 return ($aRange < $bRange) ? -1 : 1;
             });
-            $this->cache->save($this->graph->getUri() . '.' . $s, $title);
+            $item = $this->cache->getItem(urlencode($this->graph->getUri() . '.' . $s));
+            $this->cache->save($item->set($title));
         }
 
         return $titles;
@@ -132,9 +135,11 @@ abstract class AbstractIndex
     {
         $titles = array();
 
+
         foreach ($uriList as $uri) {
             // load from cache
-            $titleObjs = $this->cache->load($this->graph . '.' . $uri);
+            $item = $this->cache->getItem(urlencode($this->graph . '.' . $uri));
+            $titleObjs = $item->get();
 
             $titleDefLang = null;
             $title = null;
