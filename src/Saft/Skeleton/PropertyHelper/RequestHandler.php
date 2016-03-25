@@ -14,10 +14,7 @@ use Saft\Rdf\NamedNode;
 use Saft\Rdf\NamedNodeImpl;
 use Saft\Store\Store;
 
-use Stash;
-use Stash\Driver\FileSystem;
-use Stash\Pool;
-
+use Memcached;
 
 /**
  * Encapsulates PropertyHelper related classes, ensures correct usage and helps users that way
@@ -139,65 +136,32 @@ class RequestHandler
             throw new \Exception('Parameter $configuration does not have key "name" set.');
         }
 
-        // Create Driver with default options
-        $driver = new FileSystem(array());
-
-        // Inject the driver into a new Pool object.
-        $pool = new Pool($driver);
-
-        // New Items will get and store their data using the same Driver.
-        $item = $pool->getItem('path/to/data');
-
         switch($configuration['name']) {
             // file storage: stores data in files
-            case 'file':
-                $this->storage = new FileStorage($configuration['dir']);
-                break;
-
-            // memcached storage
-            case 'memcached':
-                $this->storage = new NewMemcachedStorage(
-                    $configuration['host'],
-                    $configuration['port']
-                );
-                break;
-
-            // memory storage: lasts as long as the current PHP session is executed.
-            case 'memory':
-                $this->storage = new MemoryStorage();
-                break;
-
-            // mongodb storage
-            case 'mongodb':
-                $this->storage = new MongoDBStorage(
-                    $configuration['host'],
-                    $configuration['port']
-                );
-                break;
-
-            // redis storage
-            case 'redis':
-                $this->storage = new RedisStorage(
-                    $configuration['host'],
-                    $configuration['port']
-                );
-                break;
-
-            // sqlite storage
-            case 'sqlite':
-                $this->storage = new SQLiteStorage($configuration['path']);
-                break;
-
-            // apc/apcu storage
             case 'apc':
-                $this->storage = new APCStorage();
+                $cache = new \Doctrine\Common\Cache\ApcCache();
+                break;
+
+            case 'memcached':
+                $memcached = new Memcached();
+                $memcached->addServer($configuration['host'], $configuration['port']);
+                $cache = new \Doctrine\Common\Cache\MemcachedCache();
+                $cache->setMemcached($memcached);
+                break;
+
+            case 'redis':
+                $redis = new \Redis();
+                $redis->connect($configuration['host'], $configuration['port']);
+
+                $cache = new \Doctrine\Common\Cache\RedisCache();
+                $cache->setRedis($redis);
                 break;
 
             default:
                 throw new \Exception('Unknown name given: '. $configuration['name']);
         }
 
-        $this->cache = new Cache($this->storage);
+        $this->cache = $cache;
     }
 
     /**

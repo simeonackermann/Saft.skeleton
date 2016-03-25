@@ -49,7 +49,7 @@ abstract class AbstractIndex
      * @param NamedNode $graph
      * @throws \Exception if preferedProperties contains 0 elements.
      */
-    public function __construct(Cache $cache, Store $store, NamedNode $graph)
+    public function __construct($cache, Store $store, NamedNode $graph)
     {
         $this->cache = $cache;
         $this->graph = $graph;
@@ -131,10 +131,18 @@ abstract class AbstractIndex
     public function fetchValues(array $uriList, $preferedLanguage = "")
     {
         $titles = array();
+        /*
+        $uriListG = array_map(function($uri){
+          return $this->graph . '.' . $uri; }, 
+          $uriList
+        );
+        var_dump( $this->cache->fetchMultiple($uriListG) );
+        */
 
         foreach ($uriList as $uri) {
             // load from cache
-            $titleObjs = $this->cache->load($this->graph . '.' . $uri);
+            //$titleObjs = $this->cache->load($this->graph . '.' . $uri);
+            $titleObjs = $this->cache->fetch($this->graph . '.' . $uri);
 
             $titleDefLang = null;
             $title = null;
