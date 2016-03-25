@@ -180,45 +180,5 @@ abstract class AbstractIndex
         }
 
         return $titles;
-        
-
-        foreach ($uriList as $uri) {
-            // load from cache
-            //$titleObjs = $this->cache->load($this->graph . '.' . $uri);
-            $titleObjs = $this->cache->fetch($this->graph . '.' . $uri);
-
-            $titleDefLang = null;
-            $title = null;
-
-            // if there are title information for a given URI
-            if (null != $titleObjs) {
-                foreach ($titleObjs['titles'] as $key => $titleObj) {
-                    // language is set for the title
-                    if (isset($titleObj['lang'])) {
-                        if ($titleObj['lang'] == $preferedLanguage) {
-                            $title = $titleObj['title'];
-                            break;
-                        }
-                        if ($titleDefLang == null
-                            && $preferedLanguage != $this->defaultLanguage
-                            && $titleObj['lang'] == $this->defaultLanguage) {
-                            $titleDefLang = $titleObj['title'];
-                        }
-                    }
-                }
-                // if a title was found
-                if (empty($title)) {
-                    if (false === empty($titleDefLang)) {
-                        $title = $titleDefLang;
-                    } else {
-                        $title = array_shift($titleObjs['titles']);
-                        $title = $title['title'];
-                    }
-                }
-            }
-            $titles[$uri] = $title;
-        }
-
-        return $titles;
     }
 }
