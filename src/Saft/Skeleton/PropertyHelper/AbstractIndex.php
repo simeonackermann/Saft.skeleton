@@ -131,13 +131,56 @@ abstract class AbstractIndex
     public function fetchValues(array $uriList, $preferedLanguage = "")
     {
         $titles = array();
-        /*
-        $uriListG = array_map(function($uri){
+        
+        $graph_uriList = array_map(function($uri){
           return $this->graph . '.' . $uri; }, 
           $uriList
         );
-        var_dump( $this->cache->fetchMultiple($uriListG) );
-        */
+
+        $items = $this->cache->fetchMultiple($graph_uriList);
+
+        //var_dump( $this->cache->fetchMultiple($graph_uriList) );
+
+        foreach ($uriList as $uri) {
+
+            $titleDefLang = null;
+            $title = null;
+
+            if ( array_key_exists($this->graph . '.' . $uri, $items) ) {
+                $titleObjs = $items[$this->graph . '.' . $uri];
+
+                foreach ($titleObjs['titles'] as $key => $titleObj) {
+                    // language is set for the title
+                    if (isset($titleObj['lang'])) {
+                        if ($titleObj['lang'] == $preferedLanguage) {
+                            $title = $titleObj['title'];
+                            break;
+                        }
+                        if ($titleDefLang == null
+                            && $preferedLanguage != $this->defaultLanguage
+                            && $titleObj['lang'] == $this->defaultLanguage) {
+                            $titleDefLang = $titleObj['title'];
+                        }
+                    }
+                }
+                // if a title was found
+                if (empty($title)) {
+                    if (false === empty($titleDefLang)) {
+                        $title = $titleDefLang;
+                    } else {
+                        $title = array_shift($titleObjs['titles']);
+                        $title = $title['title'];
+                    }
+                }
+
+            }
+
+            $titles[$uri] = $title;
+
+        }
+
+        return $titles;
+        
 
         foreach ($uriList as $uri) {
             // load from cache
